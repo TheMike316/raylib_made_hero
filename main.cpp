@@ -23,9 +23,6 @@ struct ray_window_dimensions {
     int height;
 };
 
-// these are global for now; will change in the future
-global_variable ray_offscreen_buffer global_backbuffer = {};
-
 internal ray_window_dimensions
 get_window_dimensions() {
     // TODO get render width does not seem to return actual window stuff
@@ -85,12 +82,14 @@ int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(1200, 720, "Handmade Hero");
 
-    RayResizeDIBSection(&global_backbuffer, 1200, 720);
+    ray_offscreen_buffer backbuffer = {};
+
+    RayResizeDIBSection(&backbuffer, 1200, 720);
 
     SetTargetFPS(60);
 
     Image image = {
-        .data = global_backbuffer.memory,
+        .data = backbuffer.memory,
         .width = 1200,
         .height = 720,
         .mipmaps = 1,
@@ -107,9 +106,9 @@ int main() {
 
         if (image.width != dimensions.width || image.height != dimensions.height) {
             // resize image
-            RayResizeDIBSection(&global_backbuffer, dimensions.width, dimensions.height);
+            RayResizeDIBSection(&backbuffer, dimensions.width, dimensions.height);
             image = {
-                .data = global_backbuffer.memory,
+                .data = backbuffer.memory,
                 .width = dimensions.width,
                 .height = dimensions.height,
                 .mipmaps = 1,
@@ -119,8 +118,8 @@ int main() {
             tex = LoadTextureFromImage(image);
         }
 
-        RenderWeirdGradient(global_backbuffer, x_offset, y_offset);
-        UpdateTexture(tex, global_backbuffer.memory);
+        RenderWeirdGradient(backbuffer, x_offset, y_offset);
+        UpdateTexture(tex, backbuffer.memory);
 
         BeginDrawing();
 
