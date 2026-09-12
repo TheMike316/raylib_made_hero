@@ -80,43 +80,60 @@ RayResizeDIBSection(ray_offscreen_buffer *buffer, int width, int height) {
     }
 }
 
-internal void
-RayDisplayBufferInWindow(ray_offscreen_buffer buffer, int width, int height) {
-    const Image raw_image = {
-        .data = buffer.memory,
-        .width = width,
-        .height = height,
+int main() {
+
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
+    InitWindow(1200, 720, "Handmade Hero");
+
+    RayResizeDIBSection(&global_backbuffer, 1200, 720);
+
+    SetTargetFPS(60);
+
+    Image image = {
+        .data = global_backbuffer.memory,
+        .width = 1200,
+        .height = 720,
         .mipmaps = 1,
         .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
     };
 
-    // TODO can i avoid loading and unloadig textures every single frame?
-    const Texture2D tex = LoadTextureFromImage(raw_image);
-
-    DrawTexture(tex, 0, 0, WHITE);
-}
-
-int main() {
-
-    InitWindow(1200, 720, "Handmade Hero");
-
-    RayResizeDIBSection(&global_backbuffer, 1200, 720);
+    Texture2D tex = LoadTextureFromImage(image);
 
     int x_offset = 0;
     int y_offset = 0;
     while (!WindowShouldClose()) {
 
-        RenderWeirdGradient(global_backbuffer, x_offset, y_offset);
         ray_window_dimensions dimensions = get_window_dimensions();
 
+        if (image.width != dimensions.width || image.height != dimensions.height) {
+            // resize image
+            RayResizeDIBSection(&global_backbuffer, dimensions.width, dimensions.height);
+            image = {
+                .data = global_backbuffer.memory,
+                .width = dimensions.width,
+                .height = dimensions.height,
+                .mipmaps = 1,
+                .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8,
+            };
+            UnloadTexture(tex);
+            tex = LoadTextureFromImage(image);
+        }
+
+        RenderWeirdGradient(global_backbuffer, x_offset, y_offset);
+        UpdateTexture(tex, global_backbuffer.memory);
+
         BeginDrawing();
-        // TODO stretch
-        // RayDisplayBufferInWindow(global_backbuffer, 1200, 720);
-        RayDisplayBufferInWindow(global_backbuffer, dimensions.width, dimensions.height);
+
+        DrawTexture(tex, 0, 0, WHITE);
+
         EndDrawing();
 
         ++x_offset;
         y_offset += 2;
     }
+
+    // not really necessary
+    // UnloadTexture(tex);
+
     return 0;
 }
